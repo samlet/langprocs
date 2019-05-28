@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+import "common_types.proto";
+
+option java_multiple_files = true;
+option java_package = "com.samlet.nlpserv";
+option java_outer_classname = "NlpServProto";
+option objc_class_prefix = "NLP";
+
+package nlpserv;
+//import "google/protobuf/Empty.proto";
+
+// The service definition.
+service NlpProcs {
+    // Sends a greeting
+    rpc Ping (common.PingRequest) returns (common.PingReply) {
+    }
+    rpc ParseDependency (NlParseRequest) returns (NlSentence) {
+    }
+    rpc GetPinyin (NlPinyinRequest) returns (NlText) {
+    }
+    rpc AddDocuments(NlDocumentSet) returns(NlResult){
+    }
+    rpc GetNearestDocuments(NlText) returns(NlDocumentSimilaritySet){}
+
+    rpc Tokenizer(NlTokenizerRequest) returns(NlTokens){}
+    rpc EntityExtractor(NlTokenizerRequest) returns(NlEntities){}
+    rpc ParseAmountTerms(NlText) returns(NlAmountList){}
+}
+
+service CabochaNlpProcs {
+    rpc Tokenizer(NlText) returns(NlCabochaChunks){}
+}
+
+message NlCabochaToken{
+    int32 id=1;
+    string additional_info=2;
+    repeated string feature_list=3;
+    string ne=4;
+    string normalized_surface=5;
+    string surface=6;
+    string pos=7;
+    string pos1=8;
+    string pos2=9;
+    string pos3=10;
+    string ctype=11;
+    string cform=12;
+    string genkei=13;
+    string yomi=14;
+}
+
+message NlCabochaChunk{
+    int32 id=1;
+    string additional_info=2;
+    repeated string feature_list=3;
+    int32 func_pos=4;
+    int32 head_pos=5;
+    int32 link=6;
+    float score=7;
+    int32 token_pos=8;
+    int32 next_link_id=9;
+    repeated int32 prev_link_ids=10;
+
+    repeated NlCabochaToken tokens=11;
+}
+
+message NlCabochaChunks{
+    repeated NlCabochaChunk chunks=1;
+}
+
+message NlEntity{
+    string entity=1;
+    string value=2;
+    int32 start=3;
+    float confidence=4;
+    int32 end=5;
+}
+message NlEntities{
+    repeated NlEntity entities=1;
+}
+
+message NlAmount{
+    NlEntity entity=1;
+    string numericVal=2;
+}
+
+message NlAmountList {
+    repeated NlAmount amount=1;
+}
+
+message NlTokenizerRequest{
+    NlText text=1;
+    NlTokenizerOptions options=2;
+}
+message NlToken{
+    string text=1;
+    int32 length=2;
+    string label=3;
+}
+
+message NlTokens{
+    repeated NlToken tokens = 1;
+}
+message NlTokenizerOptions{
+    bool japaneseNameRecognize=1;
+    bool placeRecognize=2;
+    bool organizationRecognize=3;
+    bool nameRecognize=4;
+    bool translatedNameRecognize=5;
+
+    bool numberQuantifierRecognize=6;
+    bool allNamedEntityRecognize=7;
+}
+message NlResult{
+    int32 code=1;
+}
+
+message NlText {
+    string text = 1;
+    string lang=2;
+}
+
+message NlWord {
+    int32 id = 1;
+    string lemma = 2;
+    string postag1 = 3;
+    string postag2 = 4;
+    int32 head_id = 5;
+    string deprel = 6;
+    string name = 7;
+}
+
+message NlParseRequest {
+    string text = 1;
+}
+
+message NlPinyinRequest {
+    string text = 1;
+    enum PinyinPresentation {
+        NUMBER = 0;
+        WITH_TONE_MARK = 1;
+        WITHOUT_TONE = 2;
+    }
+    PinyinPresentation presentation = 2;
+}
+
+message NlSentence {
+    repeated NlWord words = 1;
+}
+
+message NlSentences {
+    repeated NlSentence sentences = 1;
+}
+
+message NlDocumentSimilarity {
+    int32 documentId=1;
+    string content=2;
+    float similarity=3;
+}
+
+message NlDocumentSimilaritySet {
+    repeated NlDocumentSimilarity docs=1;
+}
+
+message NlDocumentSet{
+    repeated string textList=1;
+}

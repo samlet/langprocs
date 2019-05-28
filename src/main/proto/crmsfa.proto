@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+import "common_types.proto";
+
+option java_multiple_files = true;
+option java_package = "com.samlet.crmsfa";
+option java_outer_classname = "CrmsfaProto";
+option objc_class_prefix = "Crmsfa";
+
+package crmsfa;
+
+// The service definition.
+service CrmsfaProcs {
+    // Sends a greeting
+    rpc Ping (common.PingRequest) returns (common.PingReply) { }
+}
+
+service OdooProcs{
+    rpc Login (FaOdoo) returns (FaSession) {}
+    rpc SwitchLang (common.Text) returns (common.Result) {}
+
+    // model operations
+    rpc FieldsGet (FaModel) returns (FaModel) {}
+    rpc BrowseRecord (FaIds) returns (FaRecordset) {}
+    rpc WriteRecord (FaRecordset) returns (common.Result) {}
+    rpc Ref (common.Text) returns (FaRecordset) {}
+}
+
+message FaIds{
+    repeated int32 ids=1;
+}
+message FaOdoo{
+    string host=1;
+    int32 port=2;
+    string login=3;
+    string password=4;
+    string database=5;
+    int32 timeout=6;
+}
+
+message FaEnvironment{
+    int32 uid=1;
+    map<string,string> context=2;
+    string db=3;
+}
+
+message FaSession{
+    FaEnvironment env=2;
+    string user=3;
+    string token=4;
+    string org=5;
+}
+
+message FaModel{
+    string name=1;
+    repeated FaField fields=2;
+}
+
+message FaField{
+    string name=1;
+    string type=2;
+    bool readonly=3;
+}
+
+message FaRecord{
+    int32 id=1;
+    map<string, string> values=2;
+}
+
+message FaRecordset{
+    FaModel model=1;
+    repeated FaRecord records=2;
+}

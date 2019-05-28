@@ -1,0 +1,18 @@
+syntax = "proto3";
+package common;
+
+message PingRequest {
+    string name = 1;
+}
+
+message PingReply {
+    string message = 1;
+}
+
+message Text {
+    string text=1;
+}
+message Result{
+    int32 code=1;
+    repeated string message=2;
+}
