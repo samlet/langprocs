@@ -3,7 +3,11 @@ package com.samlet.langprocs.chinese;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLSentence;
 import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLWord;
+import com.hankcs.hanlp.dependency.IDependencyParser;
+import com.hankcs.hanlp.dependency.nnparser.NeuralNetworkDependencyParser;
 import org.junit.Test;
+
+import java.util.Map;
 
 public class HanlpDependencyParserTests {
     @Test
@@ -29,5 +33,19 @@ public class HanlpDependencyParserTests {
             if (head == CoNLLWord.ROOT) System.out.println(head.LEMMA);
             else System.out.printf("%s --(%s)--> ", head.LEMMA, head.DEPREL);
         }
+    }
+
+    @Test
+    public void testDepLabels(){
+        IDependencyParser parser = new NeuralNetworkDependencyParser().enableDeprelTranslator(false);
+        System.out.println(parser.parse("徐先生还具体帮助他确定了把画雄鹰、松鼠和麻雀作为主攻目标。"));
+        Map<String, String> trans=parser.getDeprelTranslator();
+        System.out.println(trans.keySet());
+        System.out.println(trans.values());
+    }
+    @Test
+    public void testDepLabelsZh(){
+        IDependencyParser parser = new NeuralNetworkDependencyParser().enableDeprelTranslator(true);
+        System.out.println(parser.parse("徐先生还具体帮助他确定了把画雄鹰、松鼠和麻雀作为主攻目标。"));
     }
 }

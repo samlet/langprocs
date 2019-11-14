@@ -16,11 +16,17 @@
 
 package com.samlet.langprocs;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.inject.*;
 import com.google.protobuf.Empty;
 import com.hankcs.hanlp.HanLP;
+import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLSentence;
+import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLWord;
 import com.hankcs.hanlp.corpus.document.sentence.Sentence;
 import com.hankcs.hanlp.corpus.document.sentence.word.IWord;
+import com.hankcs.hanlp.dependency.IDependencyParser;
+import com.hankcs.hanlp.dependency.nnparser.NeuralNetworkDependencyParser;
 import com.hankcs.hanlp.dictionary.py.Pinyin;
 import com.hankcs.hanlp.seg.common.Term;
 import com.samlet.langprocs.chinese.DependencyParserProcs;
@@ -31,9 +37,11 @@ import common.CommonTypes;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.samlet.nlpserv.NlPinyinRequest.PinyinPresentation.*;
@@ -197,5 +205,82 @@ public class NlpServices {
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
         }
+
+        @Override
+        public void getDependencyGraph(NlTexts request, StreamObserver<NlDepWords> responseObserver) {
+            // super.getDependencyGraph(request, responseObserver);
+            NlDepWords.Builder rs= NlDepWords.newBuilder();
+            IDependencyParser parser = new NeuralNetworkDependencyParser().enableDeprelTranslator(false);
+            for (NlText text:request.getTextsList()) {
+                CoNLLSentence sentence=parser.parse(text.getText());
+                for(CoNLLWord word:sentence.getWordArray()){
+                    rs.addWords(NlDepWord.newBuilder()
+                            .setId(word.ID)
+                            .setLemma(word.LEMMA)
+                            .setHead(word.HEAD.LEMMA)
+                            .setDeprel(word.DEPREL)
+                            .build());
+                }
+
+                Map<String,String> maps= Maps.newHashMap();
+                List<String> summary=getCoreRelations(sentence, maps);
+                rs.putAllCoreGraph(maps);
+                rs.setSummary(StringUtils.join(summary, "\n"));
+            }
+
+            responseObserver.onNext(rs.build());
+            responseObserver.onCompleted();
+        }
+
+        private List<String> getCoreRelations(CoNLLSentence sentence, Map<String, String> coreGraphMap) {
+            int coreindex = 0;
+            List<String> result= Lists.newArrayList();
+            for(CoNLLWord word:sentence){
+                if(word.HEAD.equals(CoNLLWord.ROOT)){
+                    coreindex = word.ID;
+                    break;
+                }
+            }
+            for(CoNLLWord word:sentence){
+                boolean addIt=false;
+                if(word.HEAD.ID == coreindex){
+                    // SBV	subject_verb	[主谓关系]
+                    // VOB	verb_object	[动宾关系]
+                    // WP	punctuation	[标点符号]
+                    switch (word.DEPREL) {
+                        case "SBV":
+                            result.add(String.format("\tactor: %s", word.LEMMA));
+                            addIt = true;
+                            break;
+                        case "VOB":
+                            result.add(String.format("\tobject: %s", word.LEMMA));
+                            addIt = true;
+                            break;
+                        case "WP":
+                            // skip it
+                            break;
+                        default:
+                            result.add(String.format("\trel.%s(%s): %s", word.POSTAG, word.DEPREL, word.LEMMA));
+                            break;
+                    }
+                }
+
+                if(addIt) {
+                    String item = "zh_" + word.DEPREL;
+                    // default is pinyin
+                    String pinyin=HanLP.convertToPinyinString(word.LEMMA,
+                            " ", false);
+                    coreGraphMap.put(item, pinyin);
+                    coreGraphMap.put(item+"@zh", word.LEMMA);
+                    coreGraphMap.put(item + "|id", Integer.toString(word.ID));
+                    coreGraphMap.put(item + "|text", word.NAME);
+                    coreGraphMap.put(item + "|head", word.HEAD.LEMMA);
+                    coreGraphMap.put(item + "|head_id", Integer.toString(word.HEAD.ID));
+                }
+            }
+
+            return result;
+        }
     }
 }
+

@@ -26,6 +26,7 @@ service NlpProcs {
     rpc Tokenizer(NlTokenizerRequest) returns(NlTokens){}
     rpc EntityExtractor(NlTokenizerRequest) returns(NlEntities){}
     rpc ParseAmountTerms(NlText) returns(NlAmountList){}
+    rpc GetDependencyGraph(NlTexts) returns(NlDepWords){}
 }
 
 service CabochaNlpProcs {
@@ -119,6 +120,9 @@ message NlText {
     string text = 1;
     string lang=2;
 }
+message NlTexts {
+    repeated NlText texts=1;
+}
 
 message NlWord {
     int32 id = 1;
@@ -128,6 +132,18 @@ message NlWord {
     int32 head_id = 5;
     string deprel = 6;
     string name = 7;
+}
+
+message NlDepWord{
+    int32 id=1;
+    string lemma = 2;
+    string head=3;
+    string deprel=4;
+}
+message NlDepWords{
+    repeated NlDepWord words=1;
+    map<string, string> coreGraph=2;
+    string summary=3;
 }
 
 message NlParseRequest {

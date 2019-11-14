@@ -14,6 +14,8 @@ package com.samlet.langprocs.chinese;
 import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLSentence;
 import com.hankcs.hanlp.corpus.dependency.CoNll.CoNLLWord;
+import com.hankcs.hanlp.dependency.IDependencyParser;
+import com.hankcs.hanlp.dependency.nnparser.NeuralNetworkDependencyParser;
 import com.samlet.nlpserv.*;
 import com.samlet.nlpserv.NlWord;
 
@@ -30,14 +32,16 @@ public class DependencyParserProcs
 {
     public static NlSentence parseDependency(String raw)  {
         NlSentence.Builder nlSentence=NlSentence.newBuilder();
-        CoNLLSentence sentence = HanLP.parseDependency(raw);
+        IDependencyParser parser = new NeuralNetworkDependencyParser().enableDeprelTranslator(false);
+        // CoNLLSentence sentence = HanLP.parseDependency(raw);
+        CoNLLSentence sentence = parser.parse(raw);
         for (CoNLLWord word : sentence) {
             // System.out.printf("%s --(%s)--> %s\n", word.LEMMA, word.DEPREL, word.HEAD.LEMMA);
             NlWord nlWord=NlWord.newBuilder().setId(word.ID)
                     .setLemma(word.LEMMA)
                     .setPostag1(word.POSTAG)
                     .setPostag2(word.CPOSTAG)
-                    .setDeprel(word.DEPREL)
+                    .setDeprel(word.DEPREL.toLowerCase())
                     .setHeadId(word.HEAD.ID)
                     .setName(word.NAME)
                     .build();
